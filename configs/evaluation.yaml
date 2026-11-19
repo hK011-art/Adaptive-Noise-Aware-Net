@@ -1,0 +1,10 @@
+# Evaluation protocol settings
+evaluation:
+  batch_size: 1
+  metrics: ["psnr", "ssim", "lpips"]
+  skip_lpips_if_unavailable: true
+  export_per_image_csv: true
+  per_image_csv_path: "results_per_image.csv"
+  summary_csv_path: "summary.csv"
+  conditioning_modes: ["normal", "zero", "wrong", "shuffled", "oracle"]
+

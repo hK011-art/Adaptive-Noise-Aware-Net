@@ -1,0 +1,20 @@
+# Model A: AWGN baseline without domain adaptation
+model:
+  name: "Model_A"
+  architecture: "fixed_unet"
+  base_channels: 64
+  is_adaptive: false
+  use_da: false
+
+noise:
+  type: "awgn"
+  sigma_min: 0.0
+  sigma_max: 75.0
+
+training:
+  learning_rate: 0.0001
+  batch_size: 16
+  epochs: 50
+  seed: 42
+  checkpoint_dir: "checkpoints"
+

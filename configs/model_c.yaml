@@ -1,0 +1,20 @@
+# Model C: Heteroscedastic camera noise without domain adaptation
+model:
+  name: "Model_C"
+  architecture: "fixed_unet"
+  base_channels: 64
+  is_adaptive: false
+  use_da: false
+
+noise:
+  type: "snic"
+  sensor: "mobile_sensor_inspired_heuristic"  # Heuristic proxy inspired by mobile sensor parameters
+  iso_list: [100.0, 200.0, 400.0, 800.0]
+
+training:
+  learning_rate: 0.0001
+  batch_size: 16
+  epochs: 50
+  seed: 42
+  checkpoint_dir: "checkpoints"
+

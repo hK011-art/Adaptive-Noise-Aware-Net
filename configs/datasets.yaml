@@ -1,0 +1,22 @@
+# Dataset path configurations and sample limits
+datasets:
+  div2k:
+    root_dir: "data/div2k"
+    patch_size: 128
+    num_train_samples: 1000
+    num_val_samples: 200
+    val_ratio: 0.2
+    seen_iso_list: [100.0, 200.0, 400.0, 800.0]
+    unseen_iso_list: [1600.0, 3200.0]
+
+  sidd:
+    root_dir: "data/sidd"
+    patch_size: 128
+    num_samples: 500
+
+  dnd:
+    root_dir: "data/dnd"
+    patch_size: 128
+    num_samples: 200
+    is_held_out: true
+

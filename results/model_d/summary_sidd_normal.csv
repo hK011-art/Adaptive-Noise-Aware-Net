@@ -1,0 +1,2 @@
+model,benchmark,conditioning,n_samples,psnr_mean,psnr_std,psnr_median,ssim_mean,ssim_std,ssim_median,lpips_mean
+Model_D,sidd,normal,500,36.10335759353638,6.174015261610675,33.88770294189453,0.8847101521492005,0.10774062800412575,0.8727903366088867,

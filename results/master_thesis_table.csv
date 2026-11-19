@@ -1,0 +1,6 @@
+Model / Variant,Conditioning,PSNR (dB),SSIM,Δ vs Baseline
+Model D (Capacity Baseline),None,36.10,0.8847,0.00 dB
+Model E (Negated Conditioning),z = -z,28.55,0.8333,-7.55 dB
+Model E (Zero Conditioning),z = 0,33.43,0.8620,-2.68 dB
+Model E (Proposed Normal),Autonomous Scout,37.52,0.8739,+1.41 dB
+Model E (Oracle Upper Bound),Oracle Map,37.83,0.8806,+1.73 dB

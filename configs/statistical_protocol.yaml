@@ -1,0 +1,79 @@
+# STATISTICAL PROTOCOL REGISTRATION SPECIFICATION
+# Pre-registered hypotheses, families, effect size formulations, and multiple-comparison controls.
+# Freeze date: October 2026. Changes require an incremented protocol version.
+
+statistical_protocol:
+  version: "1.0-frozen"
+  pre_registered: true
+  description: "Formal pre-registered statistical testing protocol for Master's thesis evaluations"
+
+  primary_metric: "PSNR"
+  secondary_metrics:
+    - "SSIM"
+    - "LPIPS"
+
+  significance_level_alpha: 0.05
+  confidence_level: 0.95
+
+  primary_comparison:
+    description: "Paired evaluation of Model E vs Model D (Near-Capacity-Matched at 32 base channels, +1.43% parameter delta)"
+    hypothesis_code: "H1_PRIMARY"
+    test_type: "paired_wilcoxon_signed_rank"
+    alternative: "two-sided"
+    sample_matching: "strict_sample_manifest"
+
+  effect_size:
+    metric: "cohens_dz"
+    formula: "mean(D) / std(D, ddof=1) where D = proposed - baseline"
+    unit_of_analysis: "image-level paired differences"
+
+  confidence_intervals:
+    method: "paired_student_t"
+    confidence_level: 0.95
+    formula: "mean(D) +/- t(0.975, n-1) * (std(D) / sqrt(n))"
+    unit_of_analysis: "image-level paired differences"
+
+  multiple_comparison_control:
+    method: "holm_bonferroni_step_down"
+    monotonicity_enforcement: "cumulative_maximum"
+    formula: "p_adj(k) = min(1.0, max_{j <= k} (m - j + 1) * p_(j))"
+    fwer_controlled: true
+
+  hypothesis_families:
+    family_1_primary_benchmark:
+      description: "Primary Model E vs Baselines on standard real and synthetic benchmarks"
+      tests:
+        - "Model_E vs Model_D on SIDD validation"
+        - "Model_E vs Model_D on held-out DND"
+        - "Model_E vs Model_D on DIV2K validation"
+        - "Model_E vs Model_C on SIDD validation"
+
+    family_2_domain_adaptation:
+      description: "Evaluation of domain adaptation (Model B vs A is clean DA comparison; Model D vs C is exploratory combined comparison confounding DA with capacity reduction)"
+      tests:
+        - "Model_B vs Model_A on SIDD validation (clean DA isolation under 64ch)"
+        - "Model_D vs Model_C on SIDD validation (exploratory combined DA + capacity change)"
+
+    family_3_conditioning_ablations:
+      description: "Model E conditioning sensitivity and diagnostic oracle evaluation (oracle is diagnostic reference, not empirical upper bound guarantee)"
+      tests:
+        - "Model_E (normal) vs Model_E (zero)"
+        - "Model_E (normal) vs Model_E (wrong)"
+        - "Model_E (normal) vs Model_E (shuffled)"
+        - "Model_E (oracle) vs Model_E (normal) [diagnostic reference]"
+
+    family_4_multi_iso_robustness:
+      description: "Model E performance across synthetic camera ISO settings"
+      tests:
+        - "Model_E vs Model_D at ISO 100"
+        - "Model_E vs Model_D at ISO 200"
+        - "Model_E vs Model_D at ISO 400"
+        - "Model_E vs Model_D at ISO 800"
+
+  seed_policy:
+    predetermined_seeds: [42, 123, 2024]
+    purpose: "Evaluate optimization robustness and seed sensitivity across runs"
+    pairing_clarification: "Wilcoxon and Cohen's dz paired tests operate strictly on image-level paired differences (D_i = P_i - B_i) on identical evaluation samples within each benchmark"
+    aggregation: "report_mean_std_and_paired_tests_per_seed"
+    data_split_fixed: true
+

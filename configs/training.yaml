@@ -1,0 +1,11 @@
+# Global training pipeline settings
+training:
+  optimizer: "adam"
+  weight_decay: 1.0e-5
+  scheduler: "cosine"
+  warmup_epochs: 2
+  log_interval: 10
+  save_every_epochs: 5
+  seed: 42
+  num_workers: 0  # Safe default for Windows and Colab/Kaggle
+

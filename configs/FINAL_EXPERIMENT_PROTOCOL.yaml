@@ -1,0 +1,109 @@
+# FINAL EXPERIMENT CAMPAIGN PROTOCOL SPECIFICATION
+# Master pre-registered protocol for Kaggle/Google Colab experimental campaign.
+# Version: 1.0-FROZEN. Modifications require protocol version increment.
+
+campaign:
+  title: "Adaptive Noise-Aware U-Net Research Campaign"
+  version: "1.0-frozen"
+  date: "October 2026"
+  pre_registered: true
+
+models:
+  Model_A:
+    description: "Baseline Fixed U-Net, AWGN noise, No DA"
+    config_file: "configs/model_a.yaml"
+    base_channels: 64
+    is_adaptive: false
+    use_da: false
+    total_params: 12768131
+  Model_B:
+    description: "Fixed U-Net, AWGN noise, Noise-DA enabled"
+    config_file: "configs/model_b.yaml"
+    base_channels: 64
+    is_adaptive: false
+    use_da: true
+    total_params: 12768131
+  Model_C:
+    description: "Fixed U-Net, SNIC heteroscedastic noise, No DA"
+    config_file: "configs/model_c.yaml"
+    base_channels: 64
+    is_adaptive: false
+    use_da: false
+    total_params: 12768131
+  Model_D:
+    description: "Near-Capacity-Matched Fixed U-Net, SNIC heteroscedastic noise, Noise-DA enabled"
+    config_file: "configs/model_d.yaml"
+    base_channels: 32
+    is_adaptive: false
+    use_da: true
+    total_params: 3195331
+  Model_E:
+    description: "Proposed Adaptive Noise-Aware U-Net, SNIC heteroscedastic noise, Noise-DA enabled"
+    config_file: "configs/model_e.yaml"
+    base_channels: 32
+    is_adaptive: true
+    use_da: true
+    total_params: 3241156
+
+datasets:
+  div2k:
+    role: "Synthetic source domain (photographic clean images)"
+    train_split_ratio: 0.8
+    val_split_ratio: 0.2
+    patch_size: 128
+    partitioning_method: "scene_level_disjoint"
+  sidd:
+    role: "Real noisy target domain (unlabeled smartphone images)"
+    train_subset: "noisy_training_crops"
+    val_subset: "paired_validation_crops"
+    patch_size: 128
+    partitioning_method: "scene_level_disjoint"
+  dnd:
+    role: "Held-out real benchmark (zero training exposure)"
+    training_forbidden: true
+    patch_size: 128
+
+noise_synthesis:
+  model_type: "snic_inspired_heteroscedastic"
+  sensor_profile: "mobile_sensor_inspired_heuristic"
+  iso_range: [100.0, 200.0, 400.0, 800.0]
+  poisson_sampling: "exact_torch_poisson"
+  isp_transform: "numerically_invertible_camera_space"
+
+training_hyperparameters:
+  optimizer: "Adam"
+  weight_decay: 0.00001
+  base_learning_rate: 0.0001
+  film_lr_multiplier: 5.0
+  batch_size: 16
+  total_epochs: 50
+  da_beta_max: 0.2
+  da_gamma_rate: 5.0
+  lambda_noise: 0.5
+  seeds: [42, 123, 2024]
+
+checkpoint_selection_rule:
+  primary_criterion: "lowest_average_validation_loss"
+  secondary_criterion: "highest_validation_psnr_on_sidd_val"
+  test_set_selection_forbidden: true
+  note: "Checkpoints are NEVER selected using DND held-out test performance."
+
+evaluation:
+  metrics:
+    - "per_image_psnr"
+    - "per_image_ssim"
+    - "per_image_lpips"
+  lpips_backbone: "alex"
+  fail_loud_on_missing_lpips: true
+
+statistical_analysis:
+  protocol_reference: "configs/statistical_protocol.yaml"
+  fwer_correction: "holm_bonferroni_step_down"
+  effect_size: "cohens_dz"
+  confidence_interval: "paired_student_t_95"
+
+output_paths:
+  experiment_root: "experiments"
+  results_root: "results"
+  checkpoints_root: "checkpoints"
+

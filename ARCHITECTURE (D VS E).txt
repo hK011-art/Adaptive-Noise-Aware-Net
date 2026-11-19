@@ -1,0 +1,127 @@
+========================================================================================
+                      BASELINE MODEL D: STANDARD STATIC U-NET
+                 (3,195,331 Parameters | Fixed Filters | SIDD PSNR: 36.10 dB)
+========================================================================================
+
+   [ Input: Noisy Smartphone Photo (y) ] ──────────────────────┐  Global Residual Subtraction
+   [ Shape: 3 × H × W                  ]                       │  x̂ = clamp(y - r̂)
+                 │                                             │
+                 ▼                                             ▼
+   ┌───────────────────────────┐                         ┌───────────────────────────┐
+   │      ENCODER LEVEL 1      │─── Skip 1: 32 ch ──────►│      DECODER LEVEL 3      │
+   │  32 channels  |  H × W    │                         │  32 channels  |  H × W    │
+   └─────────────┬─────────────┘                         └─────────────▲─────────────┘
+                 │ MaxPool (÷2)                                        │ UpConv (×2)
+                 ▼                                                     │
+   ┌───────────────────────────┐                         ┌─────────────┴─────────────┐
+   │      ENCODER LEVEL 2      │─── Skip 2: 64 ch ──────►│      DECODER LEVEL 2      │
+   │  64 channels  |  H/2 × W/2│                         │  64 channels  |  H/2 × W/2│
+   └─────────────┬─────────────┘                         └─────────────▲─────────────┘
+                 │ MaxPool (÷2)                                        │ UpConv (×2)
+                 ▼                                                     │
+   ┌───────────────────────────┐                         ┌─────────────┴─────────────┐
+   │      ENCODER LEVEL 3      │─── Skip 3: 128 ch ─────►│      DECODER LEVEL 1      │
+   │ 128 channels  |  H/4 × W/4│                         │ 128 channels  |  H/4 × W/4│
+   └─────────────┬─────────────┘                         └─────────────▲─────────────┘
+                 │ MaxPool (÷2)                                        │ UpConv (×2)
+                 ▼                                                     │
+   ┌───────────────────────────┐                         ┌─────────────┴─────────────┐
+   │      ENCODER LEVEL 4      │                         │       UPCONV BLOCK        │
+   │ 256 channels  |  H/8 × W/8│                         │ ConvTranspose 256 → 128 ch│
+   └─────────────┬─────────────┘                         └─────────────▲─────────────┘
+                 │                                                     │
+                 └──────────────────►┌───────────────────┐─────────────┘
+                                     │    BOTTLENECK     │
+                                     │   256 channels    │
+                                     │  (Static Weights) │
+                                     └───────────────────┘
+                                               │
+                                               ▼  (from Decoder Level 3)
+                                     ┌───────────────────┐
+                                     │   RESIDUAL HEAD   │
+                                     │  Conv 1×1: 32 → 3 │
+                                     │  Predicts noise r̂ │
+                                     └─────────┬─────────┘
+                                               │
+                                               ▼
+                                     [ Clean Output: x̂ = y - r̂ ]
+                                     [ Real SIDD PSNR: 36.10 dB  ]
+
+
+
+
+
+
+
+
+
+
+
+                                     MODEL E - 
+
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │ STAGE 1: NOISE SCOUT (Lightweight Diagnosis: 20,481 params / 0.6% total overhead)  │
+ │                                                                                    │
+ │ [Noisy Photo y] ──► [Scout CNN] ──► [Noise Map M̂] ──► [Noise Encoder] ──► [★ Latent│
+ │  3 × H × W        3→16→16→1 Conv     1 × H × W         Pool(4×4) + MLP    Vector z]│
+ │                                                                           (32-D)   │
+ └─────────────────────────────────────────┬────────────────────────────────────┬─────┘
+   │ Input Photo y                         │                                    │
+   │                                       │ External Conditioning Bus (Pink)   │
+   ▼                                       │                                    │
+ ┌─────────────────────────────────────────┴────────────────────────────────────┴─────┐
+ │ STAGE 2: ADAPTIVE RESTORATION TRUNK (Identical 3.195M Backbone + 3 FiLM Equalizers)│
+ │                                                                                    │
+ │  [ Noisy Photo y ] ─────────────────────────────────────────┐ Residual Subtraction │
+ │         │                                                   │ x̂ = clamp(y - r̂)     │
+ │         ▼                                                   ▼                      │
+ │  ┌─────────────┐                                     ┌─────────────┐               │
+ │  │  Encoder 1  │─────── Horizontal Skip (32 ch) ────►│  Decoder 3  │               │
+ │  │    32 ch    │                                     │    32 ch    │               │
+ │  └──────┬──────┘                                     └──────▲──────┘               │
+ │         │ MaxPool (÷2)                                      │                      │
+ │         ▼                                            ┌──────┴──────┐               │
+ │  ┌─────────────┐                                     │  Decoder 2  │◄─┐            │
+ │  │  Encoder 2  │                                     │    64 ch    │  │            │
+ │  │    64 ch    │                                     └──────▲──────┘  │            │
+ │  └──────┬──────┘                                            │         │            │
+ │         ▼                                            ┌──────┴──────┐  │ Tune       │
+ │  ┌─────────────┐                                     │ ★ FiLM 3    │  │ FiLM 3     │
+ │  │ ★ FiLM 1    │◄── Tune FiLM 1                      │ Modulates   │──┘ (from z)   │
+ │  │ Modulates   │    (from vector z)                  │ 64 channels │               │
+ │  │ 64 channels │                                     └──────▲──────┘               │
+ │  └──────┬──────┘                                            │ UpConv (×2)          │
+ │         │                                            ┌──────┴──────┐               │
+ │         ▼                                            │  Decoder 1  │               │
+ │  ┌─────────────┐                                     │   128 ch    │               │
+ │  │  Encoder 3  │─────── Horizontal Skip (128 ch) ───►└──────▲──────┘               │
+ │  │   128 ch    │                                            │ UpConv (×2)          │
+ │  └──────┬──────┘                                     ┌──────┴──────┐               │
+ │         │ MaxPool (÷2)                               │   UpConv    │               │
+ │         ▼                                            │ 256→128 ch  │               │
+ │  ┌─────────────┐                                     └──────▲──────┘               │
+ │  │  Encoder 4  │                                            │                      │
+ │  │   256 ch    │                                            │                      │
+ │  └──────┬──────┘                                            │                      │
+ │         │                                                   │                      │
+ │         └───────────────►┌─────────────┐────────────────────┘                      │
+ │                          │ Bottleneck  │                                           │
+ │                          │   256 ch    │                                           │
+ │                          └──────┬──────┘                                           │
+ │                                 ▼                                                  │
+ │                          ┌─────────────┐                                           │
+ │                          │ ★ FiLM 2    │◄── Tune FiLM 2 (Bottleneck 256 ch)        │
+ │                          │ Modulates   │    (from vector z)                        │
+ │                          │   256 ch    │                                           │
+ │                          └─────────────┘                                           │
+ │                                                                                    │
+ │                                 ▼ (from Decoder Level 3)                           │
+ │                          ┌─────────────┐                                           │
+ │                          │Residual Head│                                           │
+ │                          │ 32 → 3 ch   │                                           │
+ │                          └──────┬──────┘                                           │
+ │                                 │                                                  │
+ │                                 ▼                                                  │
+ │               [ Clean Output: x̂ = clamp(y - r̂) ]                                   │
+ │               [ Real SIDD PSNR: 37.52 dB (+1.41 dB Gain | p = 2.07e-18) ]          │
+ └────────────────────────────────────────────────────────────────────────────────────┘

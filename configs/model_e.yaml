@@ -1,0 +1,30 @@
+# Model E: Adaptive Noise-Aware U-Net with Scout CNN, FiLM conditioning, and Noise-DA
+model:
+  name: "Model_E"
+  architecture: "adaptive_unet"
+  base_channels: 32
+  embedding_dim: 32
+  is_adaptive: true
+  use_da: true
+
+noise:
+  type: "snic"
+  sensor: "mobile_sensor_inspired_heuristic"  # Heuristic proxy inspired by mobile sensor parameters
+  iso_list: [100.0, 200.0, 400.0, 800.0]
+
+da:
+  beta_max: 0.2
+  gamma_rate: 5.0
+  margin: 0.1
+
+loss:
+  lambda_noise: 0.5
+
+training:
+  learning_rate: 0.0001
+  film_lr_multiplier: 5.0
+  batch_size: 16
+  epochs: 50
+  seed: 42
+  checkpoint_dir: "checkpoints"
+
